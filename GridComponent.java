@@ -1,6 +1,9 @@
 package components;
 
+import com.sun.rowset.internal.Row;
+import controller.GameController;
 import entity.GridStatus;
+import minesweeper.GamePanel;
 import minesweeper.MainFrame;
 
 import java.awt.*;//换swing
@@ -28,6 +31,8 @@ public class GridComponent extends BasicComponent {
     private int col;
     private GridStatus status = GridStatus.Covered;//可以考虑于Square进行衔接
     private String content;
+    public static int Row = Data.xCount;
+    public static int Col = Data.yCount;
 
     public GridComponent(int x, int y) {
         this.setSize(gridSize, gridSize);//调整大小需要改这个
@@ -42,23 +47,37 @@ public class GridComponent extends BasicComponent {
             this.status = GridStatus.Clicked;
             repaint();
 
+//            setBlank(row, col);
 
-            if (content.equals("-1")) {
-                if (MainFrame.controller.getOnTurnPlayer() == MainFrame.controller.getP1()) {
-                    MainFrame.controller.getP1().costp1Score();
-                    MainFrame.controller.addNumberOfLandmineBoom();
-                } else if (MainFrame.controller.getOnTurnPlayer() == MainFrame.controller.getP2()) {
-                    MainFrame.controller.getP2().costp2Score();
-                    MainFrame.controller.addNumberOfLandmineBoom();
+            if (Starter.mainFrame.controller.getP2().getUserName() == null) {
+                Starter.mainFrame.controller.setClick(0);
+            }
+
+            if (Starter.mainFrame.controller.getP2().getUserName() == null) {
+                if (content.equals("0")) {
+                    open(row, col);
                 }
             }
-            MainFrame.controller.getScoreBoard().update();
 
 
-            MainFrame.controller.addClick();
-            if (MainFrame.controller.getClick() == MainFrame.controller.getTimes()) {
-                MainFrame.controller.nextTurn();
-                MainFrame.controller.setClick(0);
+            if (content.equals("-1")) {
+                if (Starter.mainFrame.controller.getOnTurnPlayer() == Starter.mainFrame.controller.getP1()) {
+                    Starter.mainFrame.controller.getP1().costp1Score();
+                    Starter.mainFrame.controller.addNumberOfLandmineBoom();
+                    Starter.mainFrame.controller.check();
+                    System.out.println("Yes");
+                } else if (Starter.mainFrame.controller.getOnTurnPlayer() == Starter.mainFrame.controller.getP2()) {
+                    Starter.mainFrame.controller.getP2().costp2Score();
+                    Starter.mainFrame.controller.addNumberOfLandmineBoom();
+                }
+            }//
+
+            Starter.mainFrame.controller.getScoreBoard().update();
+
+            Starter.mainFrame.controller.addClick();
+            if (Starter.mainFrame.controller.getClick() == Starter.mainFrame.controller.getTimes()) {
+                Starter.mainFrame.controller.nextTurn();
+                Starter.mainFrame.controller.setClick(0);
 
             }
 
@@ -72,30 +91,39 @@ public class GridComponent extends BasicComponent {
         System.out.printf("Gird (%d,%d) is right-clicked.\n", row, col);
         if (this.status == GridStatus.Covered) {
             this.status = GridStatus.Flag;
+
             repaint();
-            MainFrame.controller.addClick();
+            Starter.mainFrame.controller.addClick();
+
+
+            if (Starter.mainFrame.controller.getP2().getUserName() == null) {
+                Starter.mainFrame.controller.setClick(0);
+                open(row, col);
+            }
+
 
             if (content.equals("-1") && this.status == GridStatus.Flag) {
-                if (MainFrame.controller.getOnTurnPlayer() == MainFrame.controller.getP1()) {
-                    MainFrame.controller.getP1().addp1Score();
-                    MainFrame.controller.addNumberOfLandmineFlag();
-                } else if (MainFrame.controller.getOnTurnPlayer() == MainFrame.controller.getP2()) {
-                    MainFrame.controller.getP2().addp2Score();
-                    MainFrame.controller.addNumberOfLandmineFlag();
+                if (Starter.mainFrame.controller.getOnTurnPlayer() == Starter.mainFrame.controller.getP1()) {
+                    Starter.mainFrame.controller.getP1().addp1Score();
+                    Starter.mainFrame.controller.addNumberOfLandmineFlag();
+                    Starter.mainFrame.controller.check();
+                } else if (Starter.mainFrame.controller.getOnTurnPlayer() == Starter.mainFrame.controller.getP2()) {
+                    Starter.mainFrame.controller.getP2().addp2Score();
+                    Starter.mainFrame.controller.addNumberOfLandmineFlag();
                 }
             }
             if (!content.equals("-1") && this.status == GridStatus.Flag) {
-                if (MainFrame.controller.getOnTurnPlayer() == MainFrame.controller.getP1()) {
-                    MainFrame.controller.getP1().addp1mistake();
-                } else if (MainFrame.controller.getOnTurnPlayer() == MainFrame.controller.getP2()) {
-                    MainFrame.controller.getP2().addp2mistake();
+                if (Starter.mainFrame.controller.getOnTurnPlayer() == Starter.mainFrame.controller.getP1()) {
+                    Starter.mainFrame.controller.getP1().addp1mistake();
+                } else if (Starter.mainFrame.controller.getOnTurnPlayer() == Starter.mainFrame.controller.getP2()) {
+                    Starter.mainFrame.controller.getP2().addp2mistake();
                 }
             }
-            MainFrame.controller.getScoreBoard().update();
+            Starter.mainFrame.controller.getScoreBoard().update();
 
-            if (MainFrame.controller.getClick() == MainFrame.controller.getTimes()) {
-                MainFrame.controller.nextTurn();
-                MainFrame.controller.setClick(0);
+            if (Starter.mainFrame.controller.getClick() == Starter.mainFrame.controller.getTimes()) {
+                Starter.mainFrame.controller.nextTurn();
+                Starter.mainFrame.controller.setClick(0);
 
             }
         }
@@ -164,4 +192,132 @@ public class GridComponent extends BasicComponent {
         super.printComponents(g);
         draw(g);
     }
+
+    @Override
+    public String toString() {
+        return "GridComponent{" +
+                "row=" + row +
+                ", col=" + col +
+                ", status=" + status +
+                ", content='" + content + '\'' +
+                '}';
+    }
+
+
+    private void open(int i, int j) {
+
+        if (Starter.mainFrame.controller.getGamePanel().getMineField()[i][j].content.equals("-1")) {//已经打开直接返回
+            return;
+        } else if (Starter.mainFrame.controller.getGamePanel().getMineField()[i][j].status == GridStatus.Covered) {
+            Starter.mainFrame.controller.getGamePanel().getMineField()[i][j].status = GridStatus.Clicked;
+            repaint();//设置打开状态
+            GridComponent num = Starter.mainFrame.controller.getGamePanel().getMineField()[i][j];
+            if (num.content.equals("0")) {//直接使用雷的图片
+            } else {//如果当前不是雷，显示对应数字类图片
+                setBlank(i, j);
+            }
+        }
+    }
+
+    private void setBlank(int i, int j) {
+        //左上
+        int ci = i - 1;
+        int cj = j - 1;
+        if (ci >= 0 && cj >= 0) {
+            open(ci, cj);
+        }
+        //上
+        ci = i - 1;
+        cj = j;
+        if (ci >= 0) {
+            open(ci, cj);
+
+        }
+        //右上
+        ci = i - 1;
+        cj = j + 1;
+        if (ci >= 0 && cj < Col) {
+            open(ci, cj);
+
+        }
+        //右
+        ci = i;
+        cj = j + 1;
+        if (cj < Col) {
+            open(ci, cj);
+
+        }
+        //右下
+        ci = i + 1;
+        cj = j + 1;
+        if (ci < Row && cj < Col) {
+            open(ci, cj);
+
+        }
+        //下
+        ci = i + 1;
+        cj = j;
+        if (ci < Row) {
+            open(ci, cj);
+
+        }
+        //左下
+        ci = i + 1;
+        cj = j - 1;
+        if (ci < Row && cj >= 0) {
+            open(ci, cj);
+
+        }
+        //左
+        ci = i;
+        cj = j - 1;
+        if (cj >= 0) {
+            open(ci, cj);
+
+        }
+    }
+
+
+//    public void setBlank(int row, int col) {
+//        if (Starter.mainFrame.controller.getGamePanel().getMineField()[row][col].status == GridStatus.Clicked) {
+//            if (content.equals("0")) {
+//                Starter.mainFrame.controller.getGamePanel().getMineField()[row][col].status = GridStatus.Clicked;
+//                for (int i = row - 1; i < row + 1; i++) {
+//                    for (int j = col - 1; j < col + 1; j++) {
+//                        if (i < 0 || j < 0) {
+//                            continue;
+//                        } else setBlank(row, col);
+//                    }
+//                }
+//            }else repaint();
+
+
+//            if (row - 1 > 0 && col - 1 > 0 && Starter.mainFrame.controller.getGamePanel().getMineField()[row - 1][col - 1].content.equals("0")) {
+//                setBlank(row - 1, col - 1);
+//            }
+//            if (row - 1 > 0 && col > 0 && Starter.mainFrame.controller.getGamePanel().getMineField()[row - 1][col].content.equals("0")) {
+//                setBlank(row - 1, col);
+//            }
+//            if (row - 1 > 0 && col + 1 <= Col - 1 && Starter.mainFrame.controller.getGamePanel().getMineField()[row - 1][col + 1].content.equals("0")) {
+//                setBlank(row - 1, col + 1);
+//            }
+//            if (row > 0 && col + 1 <= Col - 1 && Starter.mainFrame.controller.getGamePanel().getMineField()[row][col + 1].content.equals("0")) {
+//                setBlank(row, col - 1);
+//            }
+//            if (row + 1 <= Row - 1 && col + 1 <= Col - 1 && Starter.mainFrame.controller.getGamePanel().getMineField()[row + 1][col + 1].content.equals("0")) {
+//                setBlank(row + 1, col + 1);
+//            }
+//            if (row + 1 <= Row - 1 && col > 0 && Starter.mainFrame.controller.getGamePanel().getMineField()[row + 1][col].content.equals("0")) {
+//                setBlank(row + 1, col);
+//            }
+//            if (row + 1 <= Row - 1 && col - 1 > 0 && Starter.mainFrame.controller.getGamePanel().getMineField()[row + 1][col - 1].content.equals("0")) {
+//                setBlank(row + 1, col - 1);
+//            }
+//            if (row > 0 && col - 1 > 0 && Starter.mainFrame.controller.getGamePanel().getMineField()[row][col + 1].content.equals("0")) {
+//                setBlank(row, col - 1);
+//            }
+//       }
+//   }
 }
+
+
